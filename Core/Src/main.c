@@ -35,8 +35,10 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 
-#define BIT_LEN 441
-#define BIT_NUM 6
+#define BIT_LEN 221
+#define BIT_NUM 12
+
+#define DSAMP 4
 
 #define L_LEN 1042
 #define N_LEN 2048
@@ -93,22 +95,44 @@ void generateFSK2D(uint32_t* out_fsk_modu, int* in_bit_sequence, int num_bits, f
 {
   float f_mux;
 
+  float fadd = 50*DSAMP;
+
+  const int fhss_num = 2;
+  float fhss_0[ 2 ] = {0};
+  float fhss_1[ 2 ] = {0};
+
+  int tally_0 = 0;
+  int tally_1 = 0;
+
+  for(int m = fhss_num; m >= 0; m--)
+  {
+	  fhss_0[m] = f0 - m*fadd;
+	  fhss_1[m] = f1 + m*fadd;
+  }
+
   for (int i = 0; i < num_bits; i++)
   {
     int index = (int)(i * samples_per_bit);
 
     if (in_bit_sequence[i] == 0)
     {
-      f_mux = f0;
+		for (int cnt = 0; cnt < samples_per_bit; cnt++)
+		{
+		  f_mux = fhss_0[ tally_0 % fhss_num ] - DSAMP*50*cnt/samples_per_bit;
+		  //f_mux = fhss_0[ 0 ] - DSAMP*50*cnt/samples_per_bit;
+		  out_fsk_modu[index + cnt] =  (uint32_t)( ( 1.1 + sin( (float)(2 * PI * f_mux * cnt) / fs ) )*(4096/4) );
+		}
+		tally_0++;
     }
     else
     {
-      f_mux = f1;
-    }
-
-    for (int cnt = 0; cnt < samples_per_bit; cnt++)
-    {
-    	out_fsk_modu[index + cnt] =  (uint32_t)( ( 1.1 + sin( (float)(2 * PI * f_mux * cnt) / fs ) )*(4096/8) );
+    	for (int cnt = 0; cnt < samples_per_bit; cnt++)
+    	{
+    		f_mux = fhss_1[ tally_1 % fhss_num ] + DSAMP*50*cnt/samples_per_bit;
+    		//f_mux = fhss_1[ 0 ] + DSAMP*50*cnt/samples_per_bit;
+    		out_fsk_modu[index + cnt] =  (uint32_t)( ( 1.1 + sin( (float)(2 * PI * f_mux * cnt) / fs ) )*(4096/4) );
+    	}
+    	tally_1++;
     }
   }
 
@@ -153,10 +177,15 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  int bit_seq[BIT_NUM] = {1,1,0,1,0,0};
+  //int bit_seq[BIT_NUM] = {1,0};
+  //int bit_seq[BIT_NUM] = {1,0,1,0,1,0};
+  //int bit_seq[BIT_NUM] = {1,0,1,0,1,0,1,0,1,0,1,0};
+  //int bit_seq[BIT_NUM] = {1,1,0,1,0,0,1,1,1,1,0,0};
+  int bit_seq[BIT_NUM] = {1, 1, 0, 0, 1, 0, 1, 0, 1, 1, 0, 0};
+
   uint32_t mf_msg[BIT_NUM*BIT_LEN];
 
-  generateFSK2D(mf_msg, bit_seq, BIT_NUM, FS, BIT_LEN, 200, 800);
+  generateFSK2D(mf_msg, bit_seq, BIT_NUM, FS, BIT_LEN, 200*DSAMP, 400*DSAMP);
 
   //get_sine_val();
 
@@ -268,9 +297,9 @@ static void MX_TIM2_Init(void)
 
   /* USER CODE END TIM2_Init 1 */
   htim2.Instance = TIM2;
-  htim2.Init.Prescaler = 1;
+  htim2.Init.Prescaler = 0;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 1451;
+  htim2.Init.Period = 1451*DSAMP; //1451*DSAMP
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim2) != HAL_OK)

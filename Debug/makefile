@@ -15,6 +15,12 @@ RM := rm -rf
 -include objects.mk
 
 ifneq ($(MAKECMDGOALS),clean)
+ifneq ($(strip $(S_DEPS)),)
+-include $(S_DEPS)
+endif
+ifneq ($(strip $(S_UPPER_DEPS)),)
+-include $(S_UPPER_DEPS)
+endif
 ifneq ($(strip $(C_DEPS)),)
 -include $(C_DEPS)
 endif
@@ -40,8 +46,8 @@ function_generator.bin \
 all: function_generator.elf secondary-outputs
 
 # Tool invocations
-function_generator.elf: $(OBJS) $(USER_OBJS) C:\Users\daywa\STM32CubeIDE\workspace_1.3.0\function_generator\STM32F334R8TX_FLASH.ld
-	arm-none-eabi-gcc -o "function_generator.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\daywa\STM32CubeIDE\workspace_1.3.0\function_generator\STM32F334R8TX_FLASH.ld" --specs=nosys.specs -Wl,-Map="function_generator.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+function_generator.elf: $(OBJS) $(USER_OBJS) E:\User\ Media\Documents\GitHub\FunctionGenerator\STM32F334R8TX_FLASH.ld
+	arm-none-eabi-gcc -o "function_generator.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"E:\User Media\Documents\GitHub\FunctionGenerator\STM32F334R8TX_FLASH.ld" --specs=nosys.specs -Wl,-Map="function_generator.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
